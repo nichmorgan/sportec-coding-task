@@ -68,6 +68,7 @@ cdk deploy --require-approval never
 ```
 
 If everything went well, the application is now available.
+
 **The API url is shown in the terminal at the end of the deploy.**
 
 ### Cleaning :bomb
@@ -397,6 +398,10 @@ EVENTS:
 * Field removal *ball_possession_percentage*:  
 
 The field was removed due to the non-existence of any event that indicates the resumption of the ball in order to calculate the time of possession.
+
+* Statistics by Stream data:
+
+The statistical tables are fed through the stream of insertion in dynamodb, so the data brought are persistent in the database, in order to reduce calls to the event table.
 
 ## Improvement points
 
