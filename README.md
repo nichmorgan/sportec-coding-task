@@ -61,7 +61,7 @@ The application follows the following flow:
     cdk bootstrap
     ```
 
-### Deploy :rocket
+### Deploy :rocket:
 
 ```bash
 cdk deploy --require-approval never
@@ -71,7 +71,7 @@ If everything went well, the application is now available.
 
 **The API url is shown in the terminal at the end of the deploy.**
 
-### Cleaning :bomb
+### Cleaning :bomb:
 
 ```bash
 cdk destroy
