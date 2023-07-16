@@ -8,7 +8,6 @@ import { Construct } from "constructs";
 import { Database } from "../common/database";
 import { createLambdaFunction } from "../helpers/lambda";
 import { StatusCodes } from "../../resources/shared/enums";
-import * as R from "ramda";
 
 interface MatchSummaryApiProps {
   matchEventsDatabase: Database;
@@ -35,7 +34,9 @@ export class MatchSummaryApi extends Construct {
     super(scope, id);
 
     Object.assign(this, props);
-    this.api = new apigateway.RestApi(this, "api");
+    this.api = new apigateway.RestApi(this, "api", {
+      description: "MatchSummaryApi",
+    });
 
     this.createGetIntegration(
       "getMatchListFn",
@@ -124,7 +125,7 @@ export class MatchSummaryApi extends Construct {
 
     const fn = createLambdaFunction(this, lambdaId, lambdaFolderName, {
       environment: props?.environment,
-      timeout: props?.timeout,
+      timeout: props?.timeout ?? Duration.seconds(5),
     });
     const credentialsRole = new iam.Role(this, `${lambdaId}IntegrationRole`, {
       assumedBy: new iam.ServicePrincipal("apigateway.amazonaws.com"),

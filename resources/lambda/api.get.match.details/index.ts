@@ -57,8 +57,10 @@ async function getMatchEvents(
         }, item.event_details.M);
       }
 
-      events.push(input as interfaces.IMatchEventDetails);
-      console.log("input", input, events);
+      if (Object.keys(input).length) {
+        events.push(input as interfaces.IMatchEventDetails);
+        console.log("input", input, events);
+      } else console.warn("Ignoring event without details", item);
     });
 
     return {

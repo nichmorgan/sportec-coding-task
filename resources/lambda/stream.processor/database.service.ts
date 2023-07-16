@@ -3,6 +3,10 @@ import {
   UpdateItemCommandInput,
   UpdateItemCommand,
   AttributeValue,
+  ScanCommandInput,
+  GetItemCommand,
+  GetItemCommandInput,
+  paginateScan,
 } from "@aws-sdk/client-dynamodb";
 import {
   DynamoAttributeValue,
@@ -12,15 +16,21 @@ import {
 interface UpdateInput {
   key: string;
   setIfNotExist?: Record<string, DynamoAttributeValue>;
-  add: Record<string, DynamoAttributeValue>;
+  set?: Record<string, DynamoAttributeValue>;
+  add?: Record<string, DynamoAttributeValue>;
 }
 
-type PreparationInput = Pick<
+type UpdatePreparationInput = Pick<
   UpdateItemCommandInput,
   "UpdateExpression" | "ExpressionAttributeNames" | "ExpressionAttributeValues"
 >;
 
-type OperationType = "SET" | "ADD";
+type FindPreparationInput = Pick<
+  ScanCommandInput,
+  "FilterExpression" | "ExpressionAttributeNames" | "ExpressionAttributeValues"
+>;
+
+type OperationType = "SET" | "SET_IF_NOT_EXISTS" | "ADD";
 
 interface SummaryDatabaseServiceProps {
   tableName: string;
@@ -41,26 +51,31 @@ export class SummaryDatabaseService {
     this.keyName = keyName;
   }
 
-  private prepareOperation(
+  private prepareUpdateOperation(
     operation: OperationType,
     input: Record<string, DynamoAttributeValue>
-  ): PreparationInput {
-    const names = {};
-    const values = {};
-    let expression = `${operation} `;
+  ): UpdatePreparationInput {
+    const attrNames = {};
+    const attrValues = {};
+    let expression = `${
+      operation === "SET_IF_NOT_EXISTS" ? "SET" : operation
+    } `;
 
     Object.keys(input).forEach((key, index, arr) => {
       const keyName = `#${key}`;
       const keyValue = `:${key}`;
 
-      Object.assign(names, { [keyName]: key });
-      Object.assign(values, {
+      Object.assign(attrNames, { [keyName]: key });
+      Object.assign(attrValues, {
         [keyValue]: input[key].attributeValue,
       });
 
       switch (operation) {
-        case "SET":
+        case "SET_IF_NOT_EXISTS":
           expression += `${keyName} = if_not_exists(${keyName}, ${keyValue})`;
+          break;
+        case "SET":
+          expression += `${keyName} = ${keyValue}`;
           break;
         default:
           expression += `${keyName} ${keyValue}`;
@@ -71,29 +86,53 @@ export class SummaryDatabaseService {
 
     return {
       UpdateExpression: expression,
-      ExpressionAttributeNames: names,
-      ExpressionAttributeValues: values,
+      ExpressionAttributeNames: attrNames,
+      ExpressionAttributeValues: attrValues,
     };
   }
 
   async updateOne({
-    setIfNotExist: set,
+    set,
+    setIfNotExist,
     add,
     key,
   }: UpdateInput): Promise<Record<string, AttributeValue> | undefined> {
-    const setOperation = set ? this.prepareOperation("SET", set) : null;
-    const addOperation = this.prepareOperation("ADD", add);
+    const setIfNotExistOperation = setIfNotExist
+      ? this.prepareUpdateOperation("SET", setIfNotExist)
+      : null;
+    const setOperation = set ? this.prepareUpdateOperation("SET", set) : null;
+    const addOperation = add ? this.prepareUpdateOperation("ADD", add) : null;
 
-    console.log({ setOperation, addOperation });
+    console.log(
+      "Operators",
+      setOperation,
+      setIfNotExistOperation,
+      addOperation
+    );
 
-    const preparationParams: PreparationInput = {
-      UpdateExpression: `${addOperation.UpdateExpression} ${setOperation?.UpdateExpression}`,
+    let setExpression = setIfNotExistOperation?.UpdateExpression ?? "";
+    if (setOperation?.UpdateExpression) {
+      let temporaryExpression = setOperation.UpdateExpression;
+      if (setExpression.length) {
+        setExpression += ", ";
+        // Remove SET operator
+        temporaryExpression = temporaryExpression.slice(3);
+      }
+      setExpression += temporaryExpression;
+    }
+
+    const addExpression = addOperation?.UpdateExpression ?? "";
+
+    const preparationParams: UpdatePreparationInput = {
+      UpdateExpression: `${addExpression} ${setExpression}`,
       ExpressionAttributeNames: {
-        ...addOperation.ExpressionAttributeNames,
+        ...addOperation?.ExpressionAttributeNames,
+        ...setIfNotExistOperation?.ExpressionAttributeNames,
         ...setOperation?.ExpressionAttributeNames,
       },
       ExpressionAttributeValues: {
-        ...addOperation.ExpressionAttributeValues,
+        ...addOperation?.ExpressionAttributeValues,
+        ...setIfNotExistOperation?.ExpressionAttributeValues,
         ...setOperation?.ExpressionAttributeValues,
       },
     };
@@ -106,12 +145,70 @@ export class SummaryDatabaseService {
       ReturnValues: DynamoReturnValues.UPDATED_NEW,
       ...preparationParams,
     };
-    console.log(commandInput);
+    console.log("commandInput", commandInput);
 
     const command = new UpdateItemCommand(commandInput);
     const result = await this.client.send(command);
 
     console.log(result);
     return result.Attributes;
+  }
+
+  private prepareFindOperation(
+    filter: Record<string, DynamoAttributeValue>
+  ): FindPreparationInput {
+    const attrNames = {};
+    const attrValues = {};
+    let expression = "";
+
+    Object.keys(filter).forEach((key, index, arr) => {
+      const keyName = `#${key}`;
+      const keyValue = `:${key}`;
+
+      Object.assign(attrNames, { [keyName]: key });
+      Object.assign(attrValues, {
+        [keyValue]: filter[key].attributeValue,
+      });
+
+      expression += `${keyName} = ${keyValue}`;
+
+      if (index < arr.length - 1) expression += " AND ";
+    });
+
+    return {
+      FilterExpression: expression,
+      ExpressionAttributeNames: attrNames,
+      ExpressionAttributeValues: attrValues,
+    };
+  }
+
+  async findOneByKey(key: string) {
+    const input: GetItemCommandInput = {
+      TableName: this.tableName,
+      Key: {
+        [this.keyName]: DynamoAttributeValue.fromString(key).attributeValue,
+      },
+    };
+
+    const command = new GetItemCommand(input);
+    return this.client.send(command);
+  }
+
+  async *find(filter: Record<string, DynamoAttributeValue>) {
+    const input: ScanCommandInput = {
+      TableName: this.tableName,
+      ...this.prepareFindOperation(filter),
+    };
+
+    let lastEvaluatedKey = undefined;
+    do {
+      const pagination = paginateScan({ client: this.client }, input);
+      for await (const page of pagination) {
+        lastEvaluatedKey = page.LastEvaluatedKey;
+        for (const item of page.Items ?? []) {
+          yield item;
+        }
+      }
+    } while (typeof lastEvaluatedKey !== "undefined");
   }
 }

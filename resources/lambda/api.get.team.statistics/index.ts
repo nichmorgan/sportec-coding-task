@@ -17,7 +17,7 @@ async function getTeamSummary(
   client: DynamoDBClient,
   tableName: string,
   team: string
-): Promise<interfaces.TeamSummary | null> {
+): Promise<interfaces.ITeamSummary | null> {
   const input: GetItemCommandInput = {
     TableName: tableName,
     Key: { team: DynamoAttributeValue.fromString(team).attributeValue },

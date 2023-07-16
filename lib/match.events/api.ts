@@ -28,7 +28,9 @@ export class MatchEventsApi extends Construct {
       },
     });
 
-    const api = new apigateway.RestApi(this, "api");
+    const api = new apigateway.RestApi(this, "api", {
+      description: "MatchEventsApi",
+    });
     const ingestEndpoint = api.root.addResource("ingest");
     const credentialsRole = new iam.Role(this, "IntegrationRole", {
       assumedBy: new iam.ServicePrincipal("apigateway.amazonaws.com"),

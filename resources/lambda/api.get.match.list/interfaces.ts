@@ -1,10 +1,8 @@
-import { enums } from "/opt/shared";
+import { enums, interfaces } from "/opt/shared";
 
-export interface ResponseMatch {
+export interface ResponseMatch
+  extends Pick<interfaces.IMatchSummary, "team" | "opponent" | "date"> {
   match_id: string;
-  team: string;
-  opponent: string;
-  // date: string;
 }
 
 export interface PaginatedResponse {

@@ -1,4 +1,4 @@
-export interface TeamSummary {
+export interface ITeamSummary {
   total_matches: number;
   total_wins: number;
   total_draws: number;
@@ -7,8 +7,8 @@ export interface TeamSummary {
   total_goals_conceded: number;
 }
 
-// TODO: add date field
-export interface MatchSummary {
+export interface IMatchSummary {
+  date: string;
   team: string;
   opponent: string;
   total_goals: number;

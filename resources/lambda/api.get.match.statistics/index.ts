@@ -17,7 +17,7 @@ async function getMatchSummary(
   client: DynamoDBClient,
   tableName: string,
   match_id: string
-): Promise<interfaces.MatchSummary | null> {
+): Promise<interfaces.IMatchSummary | null> {
   const input: GetItemCommandInput = {
     TableName: tableName,
     Key: { match_id: DynamoAttributeValue.fromString(match_id).attributeValue },
@@ -33,6 +33,7 @@ async function getMatchSummary(
     team: Item.team.S as string,
     total_fouls: parseInt(Item.total_fouls.N as string),
     total_goals: parseInt(Item.total_goals.N as string),
+    date: Item.date.S as string,
   };
 }
 

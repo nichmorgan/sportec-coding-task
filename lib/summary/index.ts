@@ -26,7 +26,7 @@ export class Summary extends Construct {
     new MatchEventStreamProcessor(this, "streamProcessor", {
       matchSummaryDatabase,
       teamSummaryDatabase,
-      streamDatabase: matchEventsDatabase,
+      matchEventsDatabase,
     });
 
     new SummaryApi(this, "summaryApi", {

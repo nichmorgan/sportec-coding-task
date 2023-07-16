@@ -37,7 +37,7 @@ async function getMatchList(
         match_id: item.match_id.S as string,
         team: item.team.S as string,
         opponent: item.opponent.S as string,
-        // TODO: pending date field
+        date: item.date.S as string,
       });
     });
   }
