@@ -1,0 +1,9 @@
+{
+  "name": "api.get.team.statistics",
+  "version": "1.0.0",
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.370.0"
+  },
+  "devDependencies": {
+  }
+}

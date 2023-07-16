@@ -1,7 +1,7 @@
 import * as cdk from "aws-cdk-lib";
 import { Construct } from "constructs";
 import { MatchEvents } from "./match.events";
-import { MatchSummary } from "./match.summary";
+import { Summary } from "./summary";
 
 export class Stack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -9,8 +9,8 @@ export class Stack extends cdk.Stack {
 
     const matchEvent = new MatchEvents(this, "MatchEvents");
 
-    new MatchSummary(this, "MatchSummary", {
-      matchEventDatabase: matchEvent.database,
+    new Summary(this, "MatchSummary", {
+      matchEventsDatabase: matchEvent.database,
     });
   }
 }

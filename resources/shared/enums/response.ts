@@ -9,6 +9,7 @@ export enum ResponseStatuses {
 }
 
 export enum ResponseMatchEventMessages {
-  success = "Data successfully ingested.",
-  fail = "Failed to ingest data.",
+  successToIngest = "Data successfully ingested.",
+  failToIngest = "Failed to ingest data.",
+  failToGet = "Failed to get data.",
 }

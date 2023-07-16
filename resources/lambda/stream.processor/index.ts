@@ -1,22 +1,21 @@
 import { DynamoDBStreamEvent } from "aws-lambda";
 import { SummaryDatabaseService } from "./database.service";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { commonString } from "resources/shared/schemas";
-import { enums, yup } from "/opt/shared";
+import { enums, yup, schemas } from "/opt/shared";
 import { SummaryService } from "./summary.service";
 import * as R from "ramda";
 
 const SettingsSchema = yup.object({
-  TEAM_SUMMARY_TABLE_NAME: commonString.required(
+  TEAM_SUMMARY_TABLE_NAME: schemas.commonString.required(
     "TEAM_SUMMARY_TABLE_NAME envvar is required"
   ),
-  MATCH_SUMMARY_TABLE_NAME: commonString.required(
+  MATCH_SUMMARY_TABLE_NAME: schemas.commonString.required(
     "MATCH_SUMMARY_TABLE_NAME envvar is required"
   ),
-  TEAM_SUMMARY_KEY_NAME: commonString.required(
+  TEAM_SUMMARY_KEY_NAME: schemas.commonString.required(
     "TEAM_SUMMARY_KEY_NAME envvar is required"
   ),
-  MATCH_SUMMARY_KEY_NAME: commonString.required(
+  MATCH_SUMMARY_KEY_NAME: schemas.commonString.required(
     "MATCH_SUMMARY_KEY_NAME envvar is required"
   ),
 });
@@ -54,10 +53,16 @@ export async function main(event: DynamoDBStreamEvent) {
     const team = R.path<string>(["team", "S"])(event) as string;
     const opponent = R.path<string>(["opponent", "S"])(event) as string;
 
-    await commonString.required("event_type is required").validate(event_type);
-    await commonString.required("match_id is required").validate(match_id);
-    await commonString.required("team is required").validate(team);
-    await commonString.required("opponent is required").validate(opponent);
+    await schemas.commonString
+      .required("event_type is required")
+      .validate(event_type);
+    await schemas.commonString
+      .required("match_id is required")
+      .validate(match_id);
+    await schemas.commonString.required("team is required").validate(team);
+    await schemas.commonString
+      .required("opponent is required")
+      .validate(opponent);
 
     switch (event_type) {
       case enums.MatchEventType.goal:

@@ -35,7 +35,7 @@ const getFailResponse = (error: unknown) => ({
   statusCode: enums.StatusCodes.badFormat,
   body: JSON.stringify({
     status: enums.ResponseStatuses.error,
-    message: enums.ResponseMatchEventMessages.fail,
+    message: enums.ResponseMatchEventMessages.failToIngest,
     error,
   }),
 });
@@ -70,7 +70,7 @@ export async function main(
     body: JSON.stringify(
       {
         status: enums.ResponseStatuses.success,
-        message: enums.ResponseMatchEventMessages.success,
+        message: enums.ResponseMatchEventMessages.successToIngest,
         data: {
           event_id,
           timestamp: matchEvent.timestamp,

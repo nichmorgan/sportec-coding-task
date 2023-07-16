@@ -1,14 +1,17 @@
 import { Construct } from "constructs";
 import { Database } from "../common/database";
 import { MatchEventStreamProcessor } from "./match.event.stream";
+import { MatchSummaryApi as SummaryApi } from "./api";
 
 export interface MatchSummaryProps {
-  matchEventDatabase: Database;
+  matchEventsDatabase: Database;
 }
 
-export class MatchSummary extends Construct {
+export class Summary extends Construct {
   constructor(scope: Construct, id: string, props: MatchSummaryProps) {
     super(scope, id);
+
+    const { matchEventsDatabase } = props;
 
     const matchSummaryDatabase = new Database(this, "matchSummaryDatabase", {
       tableName: "match_summary",
@@ -23,7 +26,13 @@ export class MatchSummary extends Construct {
     new MatchEventStreamProcessor(this, "streamProcessor", {
       matchSummaryDatabase,
       teamSummaryDatabase,
-      streamDatabase: props.matchEventDatabase,
+      streamDatabase: matchEventsDatabase,
+    });
+
+    new SummaryApi(this, "summaryApi", {
+      matchEventsDatabase,
+      matchSummaryDatabase,
+      teamSummaryDatabase,
     });
   }
 }

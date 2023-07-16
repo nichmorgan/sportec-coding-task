@@ -7,6 +7,7 @@ export interface TeamSummary {
   total_goals_conceded: number;
 }
 
+// TODO: add date field
 export interface MatchSummary {
   team: string;
   opponent: string;

@@ -12,14 +12,14 @@ const isDateString: yup.TestConfig<string | undefined> = {
 
 export const commonString = yup.string().min(MIN_STRING_LEN);
 export const url = yup.string().url();
-export const minute = yup.number().integer().positive();
+export const positiveInt = yup.number().integer().positive();
 export const timestamp = yup.string().test(isDateString);
 
 const matchEventGoalDetailsSchema = yup
   .object<interfaces.IMatchEventGoalDetails>({
     player: commonString.required(),
     video_url: url.required(),
-    minute: minute.required(),
+    minute: positiveInt.required(),
     goal_type: commonString.required(),
     assist: commonString,
   })
@@ -29,7 +29,7 @@ const matchEventFoulDetailsSchema = yup
   .object<interfaces.IMatchEventFoulDetails>({
     player: commonString.required(),
     video_url: url.required(),
-    minute: minute.required(),
+    minute: positiveInt.required(),
   })
   .noUnknown();
 

@@ -4,7 +4,7 @@ import { StatusCodes } from "../../resources/shared/enums";
 import { createLambdaFunction } from "../helpers/lambda";
 import { createLambdaLayer } from "../helpers/layer";
 import path = require("path");
-import { Database } from "lib/common/database";
+import { Database } from "../common/database";
 
 interface Props {
   database: Database;
@@ -14,24 +14,19 @@ export class MatchEventsApi extends Construct {
   constructor(scope: Construct, id: string, props: Props) {
     super(scope, id);
 
-    const fn = createLambdaFunction(
-      this,
-      "handler",
-      path.join(__dirname, "../../resources/lambda/ingest.processor/index.ts"),
-      {
-        layers: [
-          createLambdaLayer(
-            this,
-            "shared",
-            path.join(__dirname, "../../resources/shared")
-          ),
-        ],
-        environment: {
-          TABLE_NAME: props.database.table.tableName,
-          KEY_NAME: props.database.pk,
-        },
-      }
-    );
+    const fn = createLambdaFunction(this, "handler", "ingest.processor", {
+      layers: [
+        createLambdaLayer(
+          this,
+          "shared",
+          path.join(__dirname, "../../resources/shared")
+        ),
+      ],
+      environment: {
+        TABLE_NAME: props.database.table.tableName,
+        KEY_NAME: props.database.pk,
+      },
+    });
 
     const api = new apigateway.RestApi(this, "api");
     const ingestEndpoint = api.root.addResource("ingest");

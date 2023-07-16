@@ -4,8 +4,7 @@ import {
   aws_lambda as lambda,
   aws_lambda_event_sources as lambda_event_sources,
 } from "aws-cdk-lib";
-import path = require("node:path");
-import { createLambdaFunction } from "../../lib/helpers/lambda";
+import { createLambdaFunction } from "../helpers/lambda";
 
 export interface MatchEventStreamProcessorProps {
   streamDatabase: Database;
@@ -23,19 +22,14 @@ export class MatchEventStreamProcessor extends Construct {
 
     const { streamDatabase, teamSummaryDatabase, matchSummaryDatabase } = props;
 
-    const fn = createLambdaFunction(
-      this,
-      "handler",
-      path.join(__dirname, "../../resources/lambda/stream.processor/index.ts"),
-      {
-        environment: {
-          TEAM_SUMMARY_TABLE_NAME: teamSummaryDatabase.table.tableName,
-          TEAM_SUMMARY_KEY_NAME: teamSummaryDatabase.pk,
-          MATCH_SUMMARY_TABLE_NAME: matchSummaryDatabase.table.tableName,
-          MATCH_SUMMARY_KEY_NAME: matchSummaryDatabase.pk,
-        },
-      }
-    );
+    const fn = createLambdaFunction(this, "handler", "stream.processor", {
+      environment: {
+        TEAM_SUMMARY_TABLE_NAME: teamSummaryDatabase.table.tableName,
+        TEAM_SUMMARY_KEY_NAME: teamSummaryDatabase.pk,
+        MATCH_SUMMARY_TABLE_NAME: matchSummaryDatabase.table.tableName,
+        MATCH_SUMMARY_KEY_NAME: matchSummaryDatabase.pk,
+      },
+    });
 
     fn.addEventSource(
       new lambda_event_sources.DynamoEventSource(streamDatabase.table, {
