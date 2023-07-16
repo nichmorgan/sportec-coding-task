@@ -7,7 +7,7 @@
       "dom"
     ],
     "outDir": "./dist",
-    "allowJs": false,
+    "allowJs": true,
     "declaration": true,
     "strict": true,
     "noImplicitAny": true,

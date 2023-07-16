@@ -2,8 +2,10 @@
   "name": "api.get.match.details",
   "version": "1.0.0",
   "dependencies": {
-    "@aws-sdk/client-dynamodb": "^3.370.0"
+    "@aws-sdk/client-dynamodb": "^3.370.0",
+    "ramda": "^0.29.0"
   },
   "devDependencies": {
+    "@types/ramda": "^0.29.3"
   }
 }

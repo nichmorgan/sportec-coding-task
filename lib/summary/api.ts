@@ -2,12 +2,13 @@ import {
   Duration,
   aws_apigateway as apigateway,
   aws_iam as iam,
-  aws_lambda as lambda,
+  aws_dynamodb as dynamodb,
 } from "aws-cdk-lib";
 import { Construct } from "constructs";
 import { Database } from "../common/database";
 import { createLambdaFunction } from "../helpers/lambda";
 import { StatusCodes } from "../../resources/shared/enums";
+import * as R from "ramda";
 
 interface MatchSummaryApiProps {
   matchEventsDatabase: Database;
@@ -20,11 +21,11 @@ interface CreateGetIntegrationProps {
   timeout?: Duration;
   method?: string;
   queryParams?: Record<string, boolean>;
-  grantReadDatabase?: Database[];
+  urlParams?: string[];
+  grantReadDatabase?: dynamodb.ITable[];
 }
 
 export class MatchSummaryApi extends Construct {
-  private readonly credentialsRole: iam.Role;
   private readonly api: apigateway.RestApi;
   private readonly matchEventsDatabase: Database;
   private readonly matchSummaryDatabase: Database;
@@ -35,45 +36,65 @@ export class MatchSummaryApi extends Construct {
 
     Object.assign(this, props);
     this.api = new apigateway.RestApi(this, "api");
-    this.credentialsRole = new iam.Role(this, "IntegrationRole", {
-      assumedBy: new iam.ServicePrincipal("apigateway.amazonaws.com"),
-    });
 
     this.createGetIntegration(
       "getMatchListFn",
       "api.get.match.list",
-      "matches",
+      "/matches",
       {
         environment: {
           MATCH_SUMMARY_TABLE: this.matchSummaryDatabase.table.tableName,
         },
-        grantReadDatabase: [this.matchSummaryDatabase],
+        grantReadDatabase: [this.matchSummaryDatabase.table],
         queryParams: { limit: true, page: true },
       }
     );
-    // this.createGetIntegration(
-    //   "getMatchDetailsFn",
-    //   "api.get.match.details",
-    //   "matches/{match_id}"
-    // );
-    // this.createGetIntegration(
-    //   "getMatchStatisticsFn",
-    //   "api.get.match.statistics",
-    //   "matches/{match_id}/statistics"
-    // );
-    // this.createGetIntegration(
-    //   "getTeamStatisticsFn",
-    //   "api.get.team.statistics",
-    //   "teams/{team_name}/statistics"
-    // );
+
+    this.createGetIntegration(
+      "getMatchDetailsFn",
+      "api.get.match.details",
+      "/matches/{match_id}",
+      {
+        environment: {
+          MATCH_EVENTS_TABLE: this.matchEventsDatabase.table.tableName,
+        },
+        grantReadDatabase: [this.matchEventsDatabase.table],
+        urlParams: ["match_id"],
+      }
+    );
+    this.createGetIntegration(
+      "getMatchStatisticsFn",
+      "api.get.match.statistics",
+      "/matches/{match_id}/statistics",
+      {
+        environment: {
+          MATCH_SUMMARY_TABLE: this.matchSummaryDatabase.table.tableName,
+        },
+        grantReadDatabase: [this.matchSummaryDatabase.table],
+        urlParams: ["match_id"],
+      }
+    );
+    this.createGetIntegration(
+      "getTeamStatisticsFn",
+      "api.get.team.statistics",
+      "/teams/{team_name}/statistics",
+      {
+        environment: {
+          TEAM_SUMMARY_TABLE: this.teamSummaryDatabase.table.tableName,
+        },
+        grantReadDatabase: [this.teamSummaryDatabase.table],
+        urlParams: ["team_name"],
+      }
+    );
   }
 
   private createGetIntegration(
     lambdaId: string,
     lambdaFolderName: string,
-    endpoint: string,
+    fullPath: string,
     props?: CreateGetIntegrationProps
   ) {
+    const resource = this.api.root.resourceForPath(fullPath);
     let methodRequestParameters: Record<string, boolean> = {};
     let integrationRequestParameters: Record<string, string> = {};
 
@@ -89,29 +110,42 @@ export class MatchSummaryApi extends Construct {
       });
     }
 
+    const urlParams = props?.urlParams;
+    if (urlParams) {
+      urlParams.forEach((key) => {
+        Object.assign(methodRequestParameters, {
+          [`method.request.path.${key}`]: true,
+        });
+        Object.assign(integrationRequestParameters, {
+          [`integration.request.path.${key}`]: `method.request.path.${key}`,
+        });
+      });
+    }
+
     const fn = createLambdaFunction(this, lambdaId, lambdaFolderName, {
       environment: props?.environment,
       timeout: props?.timeout,
     });
-    const listMatchesIntegration = new apigateway.LambdaIntegration(fn, {
-      credentialsRole: this.credentialsRole,
+    const credentialsRole = new iam.Role(this, `${lambdaId}IntegrationRole`, {
+      assumedBy: new iam.ServicePrincipal("apigateway.amazonaws.com"),
+    });
+    const integration = new apigateway.LambdaIntegration(fn, {
+      credentialsRole,
       requestParameters: integrationRequestParameters,
     });
 
-    this.api.root
-      .addResource(endpoint)
-      .addMethod(props?.method ?? "GET", listMatchesIntegration, {
-        methodResponses: [
-          { statusCode: StatusCodes.success.toString() },
-          { statusCode: StatusCodes.badFormat.toString() },
-        ],
-        requestParameters: methodRequestParameters,
-      });
+    resource.addMethod(props?.method ?? "GET", integration, {
+      methodResponses: [
+        { statusCode: StatusCodes.success.toString() },
+        { statusCode: StatusCodes.badFormat.toString() },
+      ],
+      requestParameters: methodRequestParameters,
+    });
 
-    fn.grantInvoke(this.credentialsRole).assertSuccess();
+    fn.grantInvoke(credentialsRole).assertSuccess();
     if (props?.grantReadDatabase)
-      props.grantReadDatabase.forEach((db) =>
-        db.table.grantReadData(fn).assertSuccess()
+      props.grantReadDatabase.forEach((table) =>
+        table.grantReadData(fn).assertSuccess()
       );
   }
 }
