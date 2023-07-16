@@ -39,7 +39,7 @@ export class MatchEventStreamProcessor extends Construct {
       new lambda_event_sources.DynamoEventSource(matchEventsDatabase.table, {
         startingPosition: lambda.StartingPosition.TRIM_HORIZON,
         enabled: true,
-        retryAttempts: 1, // TODO: make it better
+        retryAttempts: 1, // TODO: make it better 🚑
         filters: [
           lambda.FilterCriteria.filter({
             eventName: lambda.FilterRule.isEqual("INSERT"),
