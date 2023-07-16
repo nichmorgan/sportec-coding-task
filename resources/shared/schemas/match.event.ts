@@ -21,7 +21,7 @@ const matchEventGoalDetailsSchema = yup
     video_url: url.required(),
     minute: positiveInt.required(),
     goal_type: commonString.required(),
-    assist: commonString,
+    assist: commonString.nullable(),
   })
   .noUnknown();
 

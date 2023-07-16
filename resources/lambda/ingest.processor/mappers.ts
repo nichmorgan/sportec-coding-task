@@ -1,9 +1,9 @@
-import { DynamoDB } from "aws-sdk";
+import { AttributeValue } from "@aws-sdk/client-dynamodb";
 import { enums, interfaces } from "/opt/shared";
 
 const mapGoalEventDetail = (
   details: interfaces.IMatchEventGoalDetails
-): DynamoDB.AttributeValue => ({
+): AttributeValue => ({
   M: {
     player: { S: details.player },
     assist: details.assist ? { S: details.assist } : { NULL: true },
@@ -15,7 +15,7 @@ const mapGoalEventDetail = (
 
 const mapFoulEventDetail = (
   details: interfaces.IMatchEventFoulDetails
-): DynamoDB.AttributeValue => ({
+): AttributeValue => ({
   M: {
     player: { S: details.player },
     minute: { N: details.minute.toString() },
@@ -23,10 +23,8 @@ const mapFoulEventDetail = (
   },
 });
 
-export function eventToAttributeMap(
-  event: interfaces.IMatchEvent
-): DynamoDB.AttributeMap {
-  const input: DynamoDB.AttributeMap = {
+export function eventToAttributeMap(event: interfaces.IMatchEvent) {
+  const input: Record<string, AttributeValue> = {
     match_id: { S: event.match_id },
     timestamp: { S: event.timestamp },
     team: { S: event.team },

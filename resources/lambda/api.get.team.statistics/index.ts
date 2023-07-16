@@ -5,7 +5,6 @@ import {
   GetItemCommandInput,
 } from "@aws-sdk/client-dynamodb";
 import { yup, schemas, enums, interfaces } from "/opt/shared";
-import { DynamoAttributeValue } from "aws-cdk-lib/aws-stepfunctions-tasks";
 
 const SettingsSchema = yup.object({
   TEAM_SUMMARY_TABLE: schemas.commonString.required(
@@ -20,7 +19,7 @@ async function getTeamSummary(
 ): Promise<interfaces.ITeamSummary | null> {
   const input: GetItemCommandInput = {
     TableName: tableName,
-    Key: { team: DynamoAttributeValue.fromString(team).attributeValue },
+    Key: { team: { S: team } },
   };
 
   const command = new GetItemCommand(input);

@@ -5,7 +5,6 @@ import {
   ScanCommand,
   ScanCommandInput,
 } from "@aws-sdk/client-dynamodb";
-import { DynamoAttributeValue } from "aws-cdk-lib/aws-stepfunctions-tasks";
 import { ISuccessResponseMatch } from "./interfaces";
 import * as R from "ramda";
 
@@ -26,7 +25,7 @@ async function getMatchEvents(
       "#match_id": "match_id",
     },
     ExpressionAttributeValues: {
-      ":val": DynamoAttributeValue.fromString(match_id).attributeValue,
+      ":val": { S: match_id },
     },
     FilterExpression: "#match_id = :val",
   };

@@ -8,16 +8,12 @@ import {
   GetItemCommandInput,
   paginateScan,
 } from "@aws-sdk/client-dynamodb";
-import {
-  DynamoAttributeValue,
-  DynamoReturnValues,
-} from "aws-cdk-lib/aws-stepfunctions-tasks";
 
 interface UpdateInput {
   key: string;
-  setIfNotExist?: Record<string, DynamoAttributeValue>;
-  set?: Record<string, DynamoAttributeValue>;
-  add?: Record<string, DynamoAttributeValue>;
+  setIfNotExist?: Record<string, AttributeValue>;
+  set?: Record<string, AttributeValue>;
+  add?: Record<string, AttributeValue>;
 }
 
 type UpdatePreparationInput = Pick<
@@ -53,7 +49,7 @@ export class SummaryDatabaseService {
 
   private prepareUpdateOperation(
     operation: OperationType,
-    input: Record<string, DynamoAttributeValue>
+    input: Record<string, AttributeValue>
   ): UpdatePreparationInput {
     const attrNames = {};
     const attrValues = {};
@@ -67,7 +63,7 @@ export class SummaryDatabaseService {
 
       Object.assign(attrNames, { [keyName]: key });
       Object.assign(attrValues, {
-        [keyValue]: input[key].attributeValue,
+        [keyValue]: input[key],
       });
 
       switch (operation) {
@@ -140,9 +136,9 @@ export class SummaryDatabaseService {
     const commandInput: UpdateItemCommandInput = {
       TableName: this.tableName,
       Key: {
-        [this.keyName]: DynamoAttributeValue.fromString(key).attributeValue,
+        [this.keyName]: { S: key },
       },
-      ReturnValues: DynamoReturnValues.UPDATED_NEW,
+      ReturnValues: "ALL_NEW",
       ...preparationParams,
     };
     console.log("commandInput", commandInput);
@@ -155,7 +151,7 @@ export class SummaryDatabaseService {
   }
 
   private prepareFindOperation(
-    filter: Record<string, DynamoAttributeValue>
+    filter: Record<string, AttributeValue>
   ): FindPreparationInput {
     const attrNames = {};
     const attrValues = {};
@@ -167,7 +163,7 @@ export class SummaryDatabaseService {
 
       Object.assign(attrNames, { [keyName]: key });
       Object.assign(attrValues, {
-        [keyValue]: filter[key].attributeValue,
+        [keyValue]: filter[key],
       });
 
       expression += `${keyName} = ${keyValue}`;
@@ -186,7 +182,7 @@ export class SummaryDatabaseService {
     const input: GetItemCommandInput = {
       TableName: this.tableName,
       Key: {
-        [this.keyName]: DynamoAttributeValue.fromString(key).attributeValue,
+        [this.keyName]: { S: key },
       },
     };
 
@@ -194,7 +190,7 @@ export class SummaryDatabaseService {
     return this.client.send(command);
   }
 
-  async *find(filter: Record<string, DynamoAttributeValue>) {
+  async *find(filter: Record<string, AttributeValue>) {
     const input: ScanCommandInput = {
       TableName: this.tableName,
       ...this.prepareFindOperation(filter),

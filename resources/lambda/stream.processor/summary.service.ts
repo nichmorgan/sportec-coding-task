@@ -1,6 +1,6 @@
-import { DynamoAttributeValue } from "aws-cdk-lib/aws-stepfunctions-tasks";
 import { SummaryDatabaseService } from "./database.service";
 import { enums } from "/opt/shared";
+import { AttributeValue } from "@aws-sdk/client-dynamodb";
 
 interface SummaryServiceConfig {
   teamDatabaseService: SummaryDatabaseService;
@@ -43,11 +43,11 @@ export class SummaryService {
   async registerFoul({ team, opponent, match_id }: RegisterProps) {
     return this.matchSummaryDatabaseService.updateOne({
       key: match_id,
-      add: { total_fouls: DynamoAttributeValue.fromNumber(1) },
+      add: { total_fouls: { N: "1" } },
       setIfNotExist: {
-        team: DynamoAttributeValue.fromString(team),
-        opponent: DynamoAttributeValue.fromString(opponent),
-        total_goals: DynamoAttributeValue.fromNumber(0),
+        team: { S: team },
+        opponent: { S: opponent },
+        total_goals: { N: "0" },
       },
     });
   }
@@ -61,8 +61,8 @@ export class SummaryService {
 
   async registerEndMatch({ match_id }: Pick<RegisterProps, "match_id">) {
     const findResult = this.matchEventsDatabaseService.find({
-      match_id: DynamoAttributeValue.fromString(match_id),
-      event_type: DynamoAttributeValue.fromString(enums.MatchEventType.goal),
+      match_id: { S: match_id },
+      event_type: { S: enums.MatchEventType.goal },
     });
 
     const matchSummary = await this.matchSummaryDatabaseService.findOneByKey(
@@ -109,11 +109,11 @@ export class SummaryService {
   }) {
     const updateWinner = this.teamDatabaseService.updateOne({
       key: winner,
-      add: { total_wins: DynamoAttributeValue.fromNumber(1) },
+      add: { total_wins: { N: "1" } },
     });
     const updateLoser = this.teamDatabaseService.updateOne({
       key: loser,
-      add: { total_losses: DynamoAttributeValue.fromNumber(1) },
+      add: { total_losses: { N: "1" } },
     });
 
     return Promise.all([updateWinner, updateLoser]);
@@ -124,7 +124,7 @@ export class SummaryService {
       teams.map((t) =>
         this.teamDatabaseService.updateOne({
           key: t,
-          add: { total_draws: DynamoAttributeValue.fromNumber(1) },
+          add: { total_draws: { N: "1" } },
         })
       )
     );
@@ -135,14 +135,14 @@ export class SummaryService {
     opponent,
   }: Pick<RegisterStartMatchProps, "team" | "opponent">) {
     const setIfNotExist = {
-      total_wins: DynamoAttributeValue.fromNumber(0),
-      total_draws: DynamoAttributeValue.fromNumber(0),
-      total_losses: DynamoAttributeValue.fromNumber(0),
-      total_goals_scored: DynamoAttributeValue.fromNumber(0),
-      total_goals_conceded: DynamoAttributeValue.fromNumber(0),
+      total_wins: { N: "0" },
+      total_draws: { N: "0" },
+      total_losses: { N: "0" },
+      total_goals_scored: { N: "0" },
+      total_goals_conceded: { N: "0" },
     };
     const add = {
-      total_matches: DynamoAttributeValue.fromNumber(1),
+      total_matches: { N: "1" },
     };
 
     const teamPromise = this.teamDatabaseService.updateOne({
@@ -169,13 +169,13 @@ export class SummaryService {
     return this.matchSummaryDatabaseService.updateOne({
       key: match_id,
       setIfNotExist: {
-        team: DynamoAttributeValue.fromString(team),
-        opponent: DynamoAttributeValue.fromString(opponent),
-        total_goals: DynamoAttributeValue.fromNumber(0),
-        total_fouls: DynamoAttributeValue.fromNumber(0),
+        team: { S: team },
+        opponent: { S: opponent },
+        total_goals: { N: "0" },
+        total_fouls: { N: "0" },
       },
       set: {
-        date: DynamoAttributeValue.fromString(timestamp),
+        date: { S: timestamp },
       },
     });
   }
@@ -187,27 +187,27 @@ export class SummaryService {
     const scoredGoalAddPromise = this.teamDatabaseService.updateOne({
       key: team,
       add: {
-        total_goals_scored: DynamoAttributeValue.fromNumber(1),
+        total_goals_scored: { N: "1" },
       },
       setIfNotExist: {
-        total_matches: DynamoAttributeValue.fromNumber(0),
-        total_wins: DynamoAttributeValue.fromNumber(0),
-        total_draws: DynamoAttributeValue.fromNumber(0),
-        total_losses: DynamoAttributeValue.fromNumber(0),
-        total_goals_conceded: DynamoAttributeValue.fromNumber(0),
+        total_matches: { N: "0" },
+        total_wins: { N: "0" },
+        total_draws: { N: "0" },
+        total_losses: { N: "0" },
+        total_goals_conceded: { N: "0" },
       },
     });
     const concededGoalAddPromise = this.teamDatabaseService.updateOne({
       key: opponent,
       add: {
-        total_goals_conceded: DynamoAttributeValue.fromNumber(1),
+        total_goals_conceded: { N: "1" },
       },
       setIfNotExist: {
-        total_matches: DynamoAttributeValue.fromNumber(0),
-        total_wins: DynamoAttributeValue.fromNumber(0),
-        total_draws: DynamoAttributeValue.fromNumber(0),
-        total_losses: DynamoAttributeValue.fromNumber(0),
-        total_goals_scored: DynamoAttributeValue.fromNumber(0),
+        total_matches: { N: "0" },
+        total_wins: { N: "0" },
+        total_draws: { N: "0" },
+        total_losses: { N: "0" },
+        total_goals_scored: { N: "0" },
       },
     });
 
@@ -221,11 +221,11 @@ export class SummaryService {
   }: RegisterProps) {
     return this.matchSummaryDatabaseService.updateOne({
       key: match_id,
-      add: { total_goals: DynamoAttributeValue.fromNumber(1) },
+      add: { total_goals: { N: "1" } },
       setIfNotExist: {
-        team: DynamoAttributeValue.fromString(team),
-        opponent: DynamoAttributeValue.fromString(opponent),
-        total_fouls: DynamoAttributeValue.fromNumber(0),
+        team: { S: team },
+        opponent: { S: opponent },
+        total_fouls: { N: "0" },
       },
     });
   }

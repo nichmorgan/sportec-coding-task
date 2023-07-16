@@ -1,10 +1,14 @@
 import { interfaces, enums, schemas } from "/opt/shared";
 import { APIGatewayProxyEventV2, APIGatewayProxyResultV2 } from "aws-lambda";
-import { DynamoDB } from "aws-sdk";
 import { eventToAttributeMap } from "./mappers";
 import { v4 as uuidv4 } from "uuid";
+import {
+  DynamoDBClient,
+  PutItemCommand,
+  PutItemCommandInput,
+} from "@aws-sdk/client-dynamodb";
 
-export const DYNAMODB_CLIENT = new DynamoDB();
+export const DYNAMODB_CLIENT = new DynamoDBClient({});
 const TABLE_NAME = process.env.TABLE_NAME;
 const KEY_NAME = process.env.KEY_NAME;
 
@@ -18,16 +22,15 @@ export async function insertOne(
   console.log(JSON.stringify({ "Insert input": input }, undefined, 2));
 
   const keyValue = uuidv4();
-  const key: DynamoDB.Key = { [keyName]: { S: keyValue } };
-  const {
-    $response: { error },
-  } = await DYNAMODB_CLIENT.putItem({
+  const key = { [keyName]: { S: keyValue } };
+
+  const commandInput: PutItemCommandInput = {
     TableName: tableName,
     Item: { ...key, ...input },
-  }).promise();
+  };
 
-  if (error) throw new Error(error.message);
-
+  const command = new PutItemCommand(commandInput);
+  await DYNAMODB_CLIENT.send(command);
   return keyValue;
 }
 

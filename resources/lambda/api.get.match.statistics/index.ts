@@ -5,7 +5,6 @@ import {
   GetItemCommandInput,
 } from "@aws-sdk/client-dynamodb";
 import { yup, schemas, enums, interfaces } from "/opt/shared";
-import { DynamoAttributeValue } from "aws-cdk-lib/aws-stepfunctions-tasks";
 
 const SettingsSchema = yup.object({
   MATCH_SUMMARY_TABLE: schemas.commonString.required(
@@ -20,7 +19,7 @@ async function getMatchSummary(
 ): Promise<interfaces.IMatchSummary | null> {
   const input: GetItemCommandInput = {
     TableName: tableName,
-    Key: { match_id: DynamoAttributeValue.fromString(match_id).attributeValue },
+    Key: { match_id: { S: match_id } },
   };
 
   const command = new GetItemCommand(input);
