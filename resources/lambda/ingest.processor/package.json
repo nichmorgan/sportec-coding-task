@@ -1,0 +1,11 @@
+{
+  "name": "stream.processor",
+  "version": "1.0.0",
+  "dependencies": {
+    "aws-sdk": "^2.1415.0",
+    "uuid": "^9.0.0"
+  },
+  "devDependencies": {
+    "@types/uuid": "^9.0.2"
+  }
+}
