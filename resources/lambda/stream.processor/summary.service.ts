@@ -86,9 +86,11 @@ export class SummaryService {
       scores[team.S as string] += 1;
     }
 
-    if (teamNames[0] === teamNames[1])
+    console.log("match score", scores, teamNames);
+
+    if (scores[teamNames[0]] === scores[teamNames[1]])
       return this.registertEndMatchDraw(teamNames);
-    else if (teamNames[0] > teamNames[1])
+    else if (scores[teamNames[0]] > scores[teamNames[1]])
       return this.registerEndMatchWinnerAndLoser({
         winner: teamNames[0],
         loser: teamNames[1],

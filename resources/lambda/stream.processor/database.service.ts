@@ -94,7 +94,7 @@ export class SummaryDatabaseService {
     key,
   }: UpdateInput): Promise<Record<string, AttributeValue> | undefined> {
     const setIfNotExistOperation = setIfNotExist
-      ? this.prepareUpdateOperation("SET", setIfNotExist)
+      ? this.prepareUpdateOperation("SET_IF_NOT_EXISTS", setIfNotExist)
       : null;
     const setOperation = set ? this.prepareUpdateOperation("SET", set) : null;
     const addOperation = add ? this.prepareUpdateOperation("ADD", add) : null;
